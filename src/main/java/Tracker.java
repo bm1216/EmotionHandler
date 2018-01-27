@@ -1,4 +1,8 @@
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -11,6 +15,24 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class Tracker {
+
+  private static Map<Moods, Double> emotions = new HashMap<Moods, Double>();
+
+  public Moods getMood() {
+    Double max = 0.0;
+    for (Double value : emotions.values()) {
+      if (value > max) {
+        max = value;
+      }
+    }
+
+    for (Moods key : emotions.keySet()) {
+      if (Objects.equals(emotions.get(key), max)) {
+        return key;
+      }
+    }
+    return Moods.ANGER;
+  }
 
   // This sample uses the Apache HTTP client library(org.apache.httpcomponents:httpclient:4.2.4)
 // and the org.json library (org.json:json:20170516).
@@ -31,7 +53,6 @@ public class Tracker {
   // NOTE: Free trial subscription keys are generated in the westcentralus region, so if you are using
   // a free trial subscription key, you should not need to change this region.
   public static final String uriBase = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect";
-
 
   public static void main(String[] args) {
     HttpClient httpclient = new DefaultHttpClient();
@@ -69,10 +90,46 @@ public class Tracker {
         String jsonString = EntityUtils.toString(entity).trim();
         if (jsonString.charAt(0) == '[') {
           JSONArray jsonArray = new JSONArray(jsonString);
-          System.out.println(jsonArray.toString(2));
+//          System.out.println(jsonArray.toString(2));
+          String[] split = jsonArray.toString().split("emotion");
+          String[] split1 = split[1].split("exposure");
+          String rawEmotions = split1[0];
+          String[] split2 = rawEmotions.split("\"");
+          for (int i = 2; i < split2.length; i = i + 2) {
+            String rawNum = split2[i + 1];
+            Moods key;
+            if (split2[i].equals("contempt")) {
+              key = Moods.CONTEMPT;
+            } else if(split2[i].equals("surprise")){
+              key = Moods.SURPRISE;
+            }else if(split2[i].equals("happiness")){
+              key = Moods.HAPPINESS;
+            }else if(split2[i].equals("neutral")){
+              key = Moods.NEUTRAL;
+            }else if(split2[i].equals("sadness")){
+              key = Moods.SADNESS;
+            }else if(split2[i].equals("disgust")){
+              key = Moods.DISGUST;
+            }else if(split2[i].equals("anger")){
+              key = Moods.ANGER;
+            }else {
+              key = Moods.FEAR;
+            }
+            if (rawNum.split(":")[1].contains("}")) {
+              emotions.put(key, Double.parseDouble(rawNum.split(":")[1].split("}")[0]));
+            } else {
+              emotions.put(key, Double.parseDouble(rawNum.split(":")[1].split(",")[0]));
+            }
+
+          }
+
+          for (Moods s : emotions.keySet()) {
+            System.out.println(s + ": " + emotions.get(s));
+          }
+
         } else if (jsonString.charAt(0) == '{') {
           JSONObject jsonObject = new JSONObject(jsonString);
-          System.out.println(jsonObject.toString(2));
+//          System.out.println(jsonObject.toString(2));
         } else {
           System.out.println(jsonString);
         }
