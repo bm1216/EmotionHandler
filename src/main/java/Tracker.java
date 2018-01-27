@@ -1,14 +1,29 @@
+import com.github.sarxos.webcam.WebcamResolution;
+import com.github.sarxos.webcam.WebcamUtils;
+import com.github.sarxos.webcam.WebcamViewer;
+import com.github.sarxos.webcam.util.ImageUtils;
+import java.awt.Dimension;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.imageio.ImageIO;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import com.github.sarxos.webcam.Webcam;
+
 
 public class Tracker {
 
@@ -32,9 +47,32 @@ public class Tracker {
   // a free trial subscription key, you should not need to change this region.
   public static final String uriBase = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect";
 
-
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Throwable {
     HttpClient httpclient = new DefaultHttpClient();
+
+//    Dimension[] nonStandardResolution = new Dimension[] {
+//        WebcamResolution.PAL.getSize(),
+//        WebcamResolution.HD720.getSize(),
+//        new Dimension(2000, 1000),
+//        new Dimension(1000, 500),
+//        new Dimension(640, 480)
+//    };
+
+    Webcam webcam = Webcam.getDefault();
+    webcam.setViewSize(new Dimension(640, 480));
+//    webcam.setCustomViewSizes(nonStandardResolution);
+//    webcam.setViewSize(nonStandardResolution[4]);
+    webcam.open();
+    BufferedImage image = webcam.getImage();
+    ImageIO.write(image, "PNG", new File("test3.png"));
+    System.out.println(image.getWidth() + "x" + image.getHeight());
+    webcam.close();
+
+
+//    WebcamResolution.HD720
+    //OR
+    //WebcamUtils.capture(webcam, "test1", "jpg");
+
 
     try {
       URIBuilder builder = new URIBuilder(uriBase);
@@ -50,12 +88,17 @@ public class Tracker {
       HttpPost request = new HttpPost(uri);
 
       // Request headers.
-      request.setHeader("Content-Type", "application/json");
+      //request.setHeader("Content-Type", "application/json");
+      request.setHeader("Content-Type", "application/octet-stream");
       request.setHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
 
+
       // Request body.
-      StringEntity reqEntity = new StringEntity(
-          "{\"url\":\"https://upload.wikimedia.org/wikipedia/commons/c/c3/RH_Louise_Lillian_Gish.jpg\"}");
+      //StringEntity reqEntity = new StringEntity(
+        //  "{\"url\":\"https://upload.wikimedia.org/wikipedia/commons/c/c3/RH_Louise_Lillian_Gish.jpg\"}");
+      File file = new File("test3.png");
+
+      FileEntity reqEntity = new FileEntity(file, ContentType.APPLICATION_OCTET_STREAM);
       request.setEntity(reqEntity);
 
       // Execute the REST API call and get the response entity.
@@ -82,6 +125,9 @@ public class Tracker {
       System.out.println(e.getMessage());
     }
   }
+
 }
+
+
 
 
