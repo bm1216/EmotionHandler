@@ -16,9 +16,9 @@ import org.json.JSONObject;
 
 public class Tracker {
 
-  private static Map<Moods, Double> emotions = new HashMap<Moods, Double>();
+  private static Map<Moods, Double> emotions = new HashMap<>();
 
-  public Moods getMood() {
+  public static Moods getMood() {
     Double max = 0.0;
     for (Double value : emotions.values()) {
       if (value > max) {
@@ -126,6 +126,8 @@ public class Tracker {
           for (Moods s : emotions.keySet()) {
             System.out.println(s + ": " + emotions.get(s));
           }
+
+          System.out.println(Tracker.getMood());
 
         } else if (jsonString.charAt(0) == '{') {
           JSONObject jsonObject = new JSONObject(jsonString);
