@@ -16,5 +16,8 @@
     <orderEntry type="library" name="Maven: commons-logging:commons-logging:1.2" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.10" level="project" />
     <orderEntry type="library" name="Maven: org.json:json:20090211" level="project" />
+    <orderEntry type="library" name="Maven: com.github.sarxos:webcam-capture:0.3.10" level="project" />
+    <orderEntry type="library" name="Maven: com.nativelibs4java:bridj:0.6.2" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.2" level="project" />
   </component>
 </module>
