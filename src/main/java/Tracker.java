@@ -59,20 +59,19 @@ public class Tracker {
 //    };
 
     Webcam webcam = Webcam.getDefault();
+    System.out.println(webcam.getDevice().getResolution().toString());
     webcam.setViewSize(new Dimension(640, 480));
 //    webcam.setCustomViewSizes(nonStandardResolution);
 //    webcam.setViewSize(nonStandardResolution[4]);
     webcam.open();
-    BufferedImage image = webcam.getImage();
-    ImageIO.write(image, "PNG", new File("test3.png"));
-    System.out.println(image.getWidth() + "x" + image.getHeight());
-    webcam.close();
-
+    BufferedImage image1 = webcam.getImage();
+    ImageIO.write(image1, "PNG", new File("test3.png"));
+    System.out.println(image1.getWidth() + "x" + image1.getHeight());
+//    webcam.close();
 
 //    WebcamResolution.HD720
     //OR
     //WebcamUtils.capture(webcam, "test1", "jpg");
-
 
     try {
       URIBuilder builder = new URIBuilder(uriBase);
@@ -92,10 +91,9 @@ public class Tracker {
       request.setHeader("Content-Type", "application/octet-stream");
       request.setHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
 
-
       // Request body.
       //StringEntity reqEntity = new StringEntity(
-        //  "{\"url\":\"https://upload.wikimedia.org/wikipedia/commons/c/c3/RH_Louise_Lillian_Gish.jpg\"}");
+      //  "{\"url\":\"https://upload.wikimedia.org/wikipedia/commons/c/c3/RH_Louise_Lillian_Gish.jpg\"}");
       File file = new File("test3.png");
 
       FileEntity reqEntity = new FileEntity(file, ContentType.APPLICATION_OCTET_STREAM);
@@ -120,14 +118,13 @@ public class Tracker {
           System.out.println(jsonString);
         }
       }
-    } catch (Exception e) {
-      // Display error message.
-      System.out.println(e.getMessage());
+
+    } catch(Exception e1) {
+        // Display error message.
+        System.out.println(e1.getMessage());
     }
   }
-
 }
-
 
 
 
