@@ -2,6 +2,14 @@ import com.github.sarxos.webcam.WebcamResolution;
 import com.github.sarxos.webcam.WebcamUtils;
 import com.github.sarxos.webcam.WebcamViewer;
 import com.github.sarxos.webcam.util.ImageUtils;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.SettableFuture;
+import com.wrapper.spotify.Api;
+import com.wrapper.spotify.methods.PlaylistRequest;
+import com.wrapper.spotify.methods.authentication.ClientCredentialsGrantRequest;
+import com.wrapper.spotify.models.ClientCredentials;
+import com.wrapper.spotify.models.Playlist;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -9,10 +17,17 @@ import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -127,6 +142,7 @@ public class Tracker {
       // Execute the REST API call and get the response entity.
       HttpResponse response = httpclient.execute(request);
       HttpEntity entity = response.getEntity();
+      Moods key = Moods.NEUTRAL;
 
       if (entity != null) {
         // Format and display the JSON response.
@@ -142,7 +158,6 @@ public class Tracker {
           String[] split2 = rawEmotions.split("\"");
           for (int i = 2; i < split2.length; i = i + 2) {
             String rawNum = split2[i + 1];
-            Moods key;
             if (split2[i].equals("contempt")) {
               key = Moods.CONTEMPT;
             } else if(split2[i].equals("surprise")){
@@ -171,6 +186,94 @@ public class Tracker {
 //          for (Moods s : emotions.keySet()) {
 //            System.out.println(s + ": " + emotions.get(s));
 //          }
+
+//          ScriptEngineManager manager = new ScriptEngineManager();
+//          ScriptEngine engine = manager.getEngineByName("JavaScript");
+//          // read script file
+//          engine.eval(
+//              Files.newBufferedReader(Paths.get("/Users/barunshome/Imperial_Year2/Labs/FaceTracker/src/main/java/playSong.js"), StandardCharsets.UTF_8));
+
+         // Invocable inv = (Invocable) engine;
+          // call function from script file
+          //inv.invokeFunction("playSong", "param");
+
+          final String clientId = "dc666fe2d7c54d038e6d8bb4c4095704";
+          final String clientSecret = "100b28712cba4d699fc4ff543039d259";
+
+          final Api api = Api.builder()
+              .clientId(clientId)
+              .clientSecret(clientSecret)
+              .build();
+
+          /* Create a request object. */
+          final ClientCredentialsGrantRequest request1 = api.clientCredentialsGrant().build();
+
+          /* Use the request object to make the request, either asynchronously (getAsync) or synchronously (get) */
+          final SettableFuture<ClientCredentials> responseFuture = request1.getAsync();
+
+          /* Add callbacks to handle success and failure */
+          Futures.addCallback(responseFuture, new FutureCallback<ClientCredentials>() {
+            @Override
+            public void onSuccess(ClientCredentials clientCredentials) {
+
+              /* The tokens were retrieved successfully! */
+              System.out.println("Successfully retrieved an access token! " + clientCredentials.getAccessToken());
+              System.out.println("The access token expires in " + clientCredentials.getExpiresIn() + " seconds");
+
+              /* Set access token on the Api object so that it's used going forward */
+              api.setAccessToken(clientCredentials.getAccessToken());
+
+            /* Please note that this flow does not return a refresh token.
+              * That's only for the Authorization code flow */
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+            /* An error occurred while getting the access token. This is probably caused by the client id or
+              * client secret is invalid. */
+            }
+          });
+
+          String userId = "spotify";
+          String playListId;
+
+          switch(key.toString()) {
+            case "anger":
+              playListId = "37i9dQZF1DX3YSRoSdA634";
+              break;
+            case "happiness":
+              playListId = "3B31InoJ3c1hE8sIgQiJnT";
+              break;
+            case "sadness":
+              playListId = "37i9dQZF1DX3YSRoSdA634";
+              break;
+            case "contempt":
+              playListId = "37i9dQZF1DWZ0Y50OtuhLO";
+              break;
+            case "angry":
+              playListId = "5s7Sp5OZsw981I2OkQmyrz";
+              break;
+            case "fear":
+              playListId = "37i9dQZF1DXcBbGCLlic3p";
+              break;
+            default:
+              playListId = "37i9dQZF1DX2czWA9hqErK";
+              break;
+          }
+
+          final PlaylistRequest request2 = api.getPlaylist(userId, playListId).build();
+
+          try {
+            final Playlist playlist = request2.get();
+            
+            System.out.println("Retrieved playlist " + playlist.getName());
+            System.out.println(playlist.getDescription());
+            System.out.println("It contains " + playlist.getTracks().getTotal() + " tracks");
+
+
+          } catch (Exception e) {
+            System.out.println("Something went wrong!" + e.getMessage());
+          }
 
           System.out.println(Tracker.getMood());
 
