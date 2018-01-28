@@ -123,9 +123,9 @@ public class Tracker {
 
           }
 
-          for (Moods s : emotions.keySet()) {
-            System.out.println(s + ": " + emotions.get(s));
-          }
+//          for (Moods s : emotions.keySet()) {
+//            System.out.println(s + ": " + emotions.get(s));
+//          }
 
           System.out.println(Tracker.getMood());
 
