@@ -296,6 +296,11 @@ public class Tracker {
             }
           }
 
+          System.out.println("Some recommended songs are: ");
+          for(String song: songs) {
+            System.out.println(song);
+          }
+
         } else if (jsonString.charAt(0) == '{') {
           JSONObject jsonObject = new JSONObject(jsonString);
         } else {
