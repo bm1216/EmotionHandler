@@ -96,7 +96,6 @@ public class Tracker {
 //    };
 
     Webcam webcam = Webcam.getDefault();
-    System.out.println(webcam.getDevice().getResolution());
     webcam.setViewSize(new Dimension(640, 480));
 //    webcam.setCustomViewSizes(nonStandardResolution);
 //    webcam.setViewSize(nonStandardResolution[4]);
@@ -175,6 +174,7 @@ public class Tracker {
             }else {
               key = Moods.FEAR;
             }
+
             if (rawNum.split(":")[1].contains("}")) {
               emotions.put(key, Double.parseDouble(rawNum.split(":")[1].split("}")[0]));
             } else {
@@ -218,7 +218,7 @@ public class Tracker {
 
               /* The tokens were retrieved successfully! */
               System.out.println("Successfully retrieved an access token! " + clientCredentials.getAccessToken());
-              System.out.println("The access token expires in " + clientCredentials.getExpiresIn() + " seconds");
+              //System.out.println("The access token expires in " + clientCredentials.getExpiresIn() + " seconds");
 
               /* Set access token on the Api object so that it's used going forward */
               api.setAccessToken(clientCredentials.getAccessToken());
@@ -236,28 +236,46 @@ public class Tracker {
 
           String userId = "spotify";
           String playListId;
+          String albumMood;
 
-          switch(key.toString()) {
+          switch(Tracker.getMood().toString().toLowerCase()) {
             case "anger":
-              playListId = "37i9dQZF1DX3YSRoSdA634";
+              albumMood = "spotify:user:spotify:playlist:5s7Sp5OZsw981I2OkQmyrz";
+              playListId = "5s7Sp5OZsw981I2OkQmyrz";
               break;
             case "happiness":
+              albumMood = "spotify:user:filtr.ie:playlist:3B31InoJ3c1hE8sIgQiJnT";
+              userId = "filtr.ie";
               playListId = "3B31InoJ3c1hE8sIgQiJnT";
               break;
             case "sadness":
+              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX3YSRoSdA634";
               playListId = "37i9dQZF1DX3YSRoSdA634";
               break;
             case "contempt":
-              playListId = "37i9dQZF1DWZ0Y50OtuhLO";
+              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX3YSRoSdA634";
+              playListId = "37i9dQZF1DX3YSRoSdA634";
               break;
-            case "angry":
-              playListId = "5s7Sp5OZsw981I2OkQmyrz";
+            case "surprise":
+              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DXaFIIlnFUS86";
+              playListId = "37i9dQZF1DXaFIIlnFUS86";
               break;
             case "fear":
-              playListId = "37i9dQZF1DXcBbGCLlic3p";
+              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DXa2PsvJSPnPf";
+              playListId = "37i9dQZF1DXa2PsvJSPnPf";
+              break;
+            case "neutral":
+              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX2czWA9hqErK";
+              playListId = "37i9dQZF1DX2czWA9hqErK";
+              break;
+            case "disgust":
+              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX2czWA9hqErK";
+              playListId = "37i9dQZF1DX2czWA9hqErK";
               break;
             default:
-              playListId = "37i9dQZF1DX2czWA9hqErK";
+              albumMood = "spotify:user:filtr.ie:playlist:3B31InoJ3c1hE8sIgQiJnT";
+              userId = "filtr.ie";
+              playListId = "3B31InoJ3c1hE8sIgQiJnT";
               break;
           }
 
@@ -275,7 +293,7 @@ public class Tracker {
             System.out.println("Something went wrong!" + e.getMessage());
           }
 
-          System.out.println(Tracker.getMood());
+          //System.out.println(Tracker.getMood());
 
         } else if (jsonString.charAt(0) == '{') {
           JSONObject jsonObject = new JSONObject(jsonString);
