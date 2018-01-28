@@ -21,7 +21,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
@@ -44,25 +46,6 @@ import com.github.sarxos.webcam.Webcam;
 
 
 public class Tracker {
-
-  private static Map<Moods, Double> emotions = new HashMap<Moods, Double>();
-
-  public static Moods getMood() {
-    Double max = 0.0;
-    for (Double value : emotions.values()) {
-      if (value > max) {
-        max = value;
-      }
-    }
-
-    for (Moods key : emotions.keySet()) {
-      if (emotions.get(key).equals(max)) {
-        return key;
-      }
-    }
-    return Moods.ANGER;
-  }
-
   // This sample uses the Apache HTTP client library(org.apache.httpcomponents:httpclient:4.2.4)
 // and the org.json library (org.json:json:20170516).
 
@@ -81,34 +64,64 @@ public class Tracker {
   //
   // NOTE: Free trial subscription keys are generated in the westcentralus region, so if you are using
   // a free trial subscription key, you should not need to change this region.
-  public static final String uriBase = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect";
+  private static final String uriBase = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect";
+
+
+  private static Map<Moods, Double> emotions = new HashMap<Moods, Double>();
+
+  private static List<String> songs = new ArrayList<>();
+
+  private static List<Moods> getMood() {
+    Double max = 0.0;
+    List<Moods> list = new ArrayList<>();
+
+    for(Moods key: emotions.keySet()) {
+      if(emotions.get(key) >= 0.9) {
+        list.add(key);
+      } else if(emotions.get(key) > 0.1){
+        list.add(key);
+      }
+
+      if(list.size() == 2){
+        return list;
+      }
+    }
+
+    if(list.isEmpty()) {
+      for (Double value : emotions.values()) {
+        if (value > max) {
+          max = value;
+        }
+      }
+
+      for (Moods key : emotions.keySet()) {
+        if (emotions.get(key).equals(max)) {
+          list.add(key);
+        }
+      }
+    }
+    return list;
+  }
+
+  private static final String clientId = "dc666fe2d7c54d038e6d8bb4c4095704";
+
+  private static final String clientSecret = "100b28712cba4d699fc4ff543039d259";
+
+  private static void takePicture() throws IOException{
+    Webcam webcam = Webcam.getDefault();
+    Dimension[] d = webcam.getDevice().getResolutions();
+    webcam.setViewSize(new Dimension(d[d.length-1].width, d[d.length-1].height));
+    webcam.open();
+    BufferedImage image = webcam.getImage();
+    ImageIO.write(image, "PNG", new File("test3.png"));
+    webcam.close();
+  }
 
   public static void main(String[] args) throws Throwable {
 
     HttpClient httpclient = new DefaultHttpClient();
 
-//    Dimension[] nonStandardResolution = new Dimension[] {
-//        WebcamResolution.PAL.getSize(),
-//        WebcamResolution.HD720.getSize(),
-//        new Dimension(2000, 1000),
-//        new Dimension(1000, 500),
-//        new Dimension(640, 480)
-//    };
-
-    Webcam webcam = Webcam.getDefault();
-    webcam.setViewSize(new Dimension(640, 480));
-//    webcam.setCustomViewSizes(nonStandardResolution);
-//    webcam.setViewSize(nonStandardResolution[4]);
-    webcam.open();
-    BufferedImage image = webcam.getImage();
-    ImageIO.write(image, "PNG", new File("test3.png"));
-    System.out.println(image.getWidth() + "x" + image.getHeight());
-    webcam.close();
-
-
-//    WebcamResolution.HD720
-    //OR
-    //WebcamUtils.capture(webcam, "test1", "jpg");
+    takePicture();
 
 
     try {
@@ -141,20 +154,18 @@ public class Tracker {
       // Execute the REST API call and get the response entity.
       HttpResponse response = httpclient.execute(request);
       HttpEntity entity = response.getEntity();
-      Moods key = Moods.NEUTRAL;
 
       if (entity != null) {
-        // Format and display the JSON response.
-        System.out.println("REST Response:\n");
 
         String jsonString = EntityUtils.toString(entity).trim();
+        System.out.println(jsonString);
         if (jsonString.charAt(0) == '[') {
           JSONArray jsonArray = new JSONArray(jsonString);
-//          System.out.println(jsonArray.toString(2));
           String[] split = jsonArray.toString().split("emotion");
           String[] split1 = split[1].split("exposure");
           String rawEmotions = split1[0];
           String[] split2 = rawEmotions.split("\"");
+          Moods key;
           for (int i = 2; i < split2.length; i = i + 2) {
             String rawNum = split2[i + 1];
             if (split2[i].equals("contempt")) {
@@ -183,23 +194,6 @@ public class Tracker {
 
           }
 
-//          for (Moods s : emotions.keySet()) {
-//            System.out.println(s + ": " + emotions.get(s));
-//          }
-
-//          ScriptEngineManager manager = new ScriptEngineManager();
-//          ScriptEngine engine = manager.getEngineByName("JavaScript");
-//          // read script file
-//          engine.eval(
-//              Files.newBufferedReader(Paths.get("/Users/barunshome/Imperial_Year2/Labs/FaceTracker/src/main/java/playSong.js"), StandardCharsets.UTF_8));
-
-         // Invocable inv = (Invocable) engine;
-          // call function from script file
-          //inv.invokeFunction("playSong", "param");
-
-          final String clientId = "dc666fe2d7c54d038e6d8bb4c4095704";
-          final String clientSecret = "100b28712cba4d699fc4ff543039d259";
-
           final Api api = Api.builder()
               .clientId(clientId)
               .clientSecret(clientSecret)
@@ -215,10 +209,6 @@ public class Tracker {
           Futures.addCallback(responseFuture, new FutureCallback<ClientCredentials>() {
             @Override
             public void onSuccess(ClientCredentials clientCredentials) {
-
-              /* The tokens were retrieved successfully! */
-              System.out.println("Successfully retrieved an access token! " + clientCredentials.getAccessToken());
-              //System.out.println("The access token expires in " + clientCredentials.getExpiresIn() + " seconds");
 
               /* Set access token on the Api object so that it's used going forward */
               api.setAccessToken(clientCredentials.getAccessToken());
@@ -238,66 +228,76 @@ public class Tracker {
           String playListId;
           String albumMood;
 
-          switch(Tracker.getMood().toString().toLowerCase()) {
-            case "anger":
-              albumMood = "spotify:user:spotify:playlist:5s7Sp5OZsw981I2OkQmyrz";
-              playListId = "5s7Sp5OZsw981I2OkQmyrz";
-              break;
-            case "happiness":
-              albumMood = "spotify:user:filtr.ie:playlist:3B31InoJ3c1hE8sIgQiJnT";
-              userId = "filtr.ie";
-              playListId = "3B31InoJ3c1hE8sIgQiJnT";
-              break;
-            case "sadness":
-              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX3YSRoSdA634";
-              playListId = "37i9dQZF1DX3YSRoSdA634";
-              break;
-            case "contempt":
-              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX3YSRoSdA634";
-              playListId = "37i9dQZF1DX3YSRoSdA634";
-              break;
-            case "surprise":
-              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DXaFIIlnFUS86";
-              playListId = "37i9dQZF1DXaFIIlnFUS86";
-              break;
-            case "fear":
-              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DXa2PsvJSPnPf";
-              playListId = "37i9dQZF1DXa2PsvJSPnPf";
-              break;
-            case "neutral":
-              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX2czWA9hqErK";
-              playListId = "37i9dQZF1DX2czWA9hqErK";
-              break;
-            case "disgust":
-              albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX2czWA9hqErK";
-              playListId = "37i9dQZF1DX2czWA9hqErK";
-              break;
-            default:
-              albumMood = "spotify:user:filtr.ie:playlist:3B31InoJ3c1hE8sIgQiJnT";
-              userId = "filtr.ie";
-              playListId = "3B31InoJ3c1hE8sIgQiJnT";
-              break;
+          List<Moods> emotions = Tracker.getMood();
+
+          for(int i = 0; i < emotions.size(); i++) {
+            switch (emotions.get(i).toString().toLowerCase()) {
+              case "anger":
+                albumMood = "spotify:user:spotify:playlist:5s7Sp5OZsw981I2OkQmyrz";
+                playListId = "5s7Sp5OZsw981I2OkQmyrz";
+                break;
+              case "happiness":
+                albumMood = "spotify:user:filtr.ie:playlist:3B31InoJ3c1hE8sIgQiJnT";
+                userId = "filtr.ie";
+                playListId = "3B31InoJ3c1hE8sIgQiJnT";
+                break;
+              case "sadness":
+                albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX3YSRoSdA634";
+                playListId = "37i9dQZF1DX3YSRoSdA634";
+                break;
+              case "contempt":
+                albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX3YSRoSdA634";
+                playListId = "37i9dQZF1DX3YSRoSdA634";
+                break;
+              case "surprise":
+                albumMood = "spotify:user:spotify:playlist:37i9dQZF1DXaFIIlnFUS86";
+                playListId = "37i9dQZF1DXaFIIlnFUS86";
+                break;
+              case "fear":
+                albumMood = "spotify:user:spotify:playlist:37i9dQZF1DXa2PsvJSPnPf";
+                playListId = "37i9dQZF1DXa2PsvJSPnPf";
+                break;
+              case "neutral":
+                albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX2czWA9hqErK";
+                playListId = "37i9dQZF1DX2czWA9hqErK";
+                break;
+              case "disgust":
+                albumMood = "spotify:user:spotify:playlist:37i9dQZF1DX2czWA9hqErK";
+                playListId = "37i9dQZF1DX2czWA9hqErK ";
+                break;
+              default:
+                albumMood = "spotify:user:filtr.ie:playlist:3B31InoJ3c1hE8sIgQiJnT";
+                userId = "filtr.ie";
+                playListId = "3B31InoJ3c1hE8sIgQiJnT";
+                break;
+            }
+
+            final PlaylistRequest request2 = api.getPlaylist(userId, playListId).build();
+
+            try {
+              final Playlist playlist = request2.get();
+
+              System.out.println("Retrieved playlist " + playlist.getName());
+              System.out.println(playlist.getDescription());
+              System.out.println("It contains " + playlist.getTracks().getTotal() + " tracks");
+
+              if(emotions.size() == 2){
+                for(int j = 0; j < 3 - i; j++) {
+                  songs.add(playlist.getTracks().getItems().get(j).getTrack().getName());
+                }
+              } else {
+                for(int j = 0; j < 5; j ++) {
+                  songs.add(playlist.getTracks().getItems().get(j).getTrack().getName());
+                }
+              }
+
+            } catch (Exception e) {
+              System.out.println("Something went wrong!" + e.getMessage());
+            }
           }
-
-          final PlaylistRequest request2 = api.getPlaylist(userId, playListId).build();
-
-          try {
-            final Playlist playlist = request2.get();
-            
-            System.out.println("Retrieved playlist " + playlist.getName());
-            System.out.println(playlist.getDescription());
-            System.out.println("It contains " + playlist.getTracks().getTotal() + " tracks");
-
-
-          } catch (Exception e) {
-            System.out.println("Something went wrong!" + e.getMessage());
-          }
-
-          //System.out.println(Tracker.getMood());
 
         } else if (jsonString.charAt(0) == '{') {
           JSONObject jsonObject = new JSONObject(jsonString);
-//          System.out.println(jsonObject.toString(2));
         } else {
           System.out.println(jsonString);
         }
