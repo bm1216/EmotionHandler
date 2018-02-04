@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
 import javax.script.Invocable;
@@ -82,6 +83,8 @@ public class Tracker {
 
   //Spotify client secret id.
   private static final String clientSecret = APIKeys.SECRET;
+
+  private static final Random random = new Random();
 
   private static Map<Moods, Double> emotions = new HashMap<>();
 
@@ -312,11 +315,21 @@ public class Tracker {
 
               if (emotions.size() == 2) {
                 for (int j = 0; j < 3 - i; j++) {
-                  songs.add(playlist.getTracks().getItems().get(j).getTrack().getName());
+                  String track = playlist.getTracks().getItems().get(random.nextInt(playlist.getTracks().getTotal() - 1)).getTrack().getName();
+                  while (songs.contains(track)) {
+                    track = playlist.getTracks().getItems().get(random.nextInt(playlist.getTracks().getTotal() - 1)).getTrack().getName();
+                  }
+                  songs.add(track);
                 }
               } else {
                 for (int j = 0; j < 5; j++) {
-                  songs.add(playlist.getTracks().getItems().get(j).getTrack().getName());
+                  String track = playlist.getTracks().getItems().get(random.nextInt(playlist.getTracks().getTotal() - 1)).getTrack().getName();
+
+                  while (songs.contains(track)) {
+                    track = playlist.getTracks().getItems().get(random.nextInt(playlist.getTracks().getTotal() - 1)).getTrack().getName();
+                  }
+
+                  songs.add(track);
                 }
               }
 
@@ -343,6 +356,10 @@ public class Tracker {
       // Display error message.
       System.out.println(e.getMessage());
     }
+
+    // re-initializing memory.
+    songs = new ArrayList<>();
+    emotions = new HashMap<>();
 
     return sb.toString();
   }
