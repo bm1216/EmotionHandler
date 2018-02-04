@@ -5,6 +5,7 @@ import com.github.sarxos.webcam.util.ImageUtils;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.IO;
 import com.wrapper.spotify.Api;
 import com.wrapper.spotify.methods.PlaylistRequest;
 import com.wrapper.spotify.methods.authentication.ClientCredentialsGrantRequest;
@@ -53,41 +54,57 @@ public class Tracker {
   // *** Update or verify the following values. ***
   // **********************************************
 
+
+  /**
+   * To update these values, create a class called APIKeys and create respective static fields.
+   * For example:
+   * static String REGION = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect"
+   */
+
   // Replace the subscriptionKey string value with your valid subscription key.
-  public static final String subscriptionKey = "93f812339bfc4729bf0fede05dd7c862";
+  public static final String subscriptionKey = APIKeys.SUBSCRIPTION_KEY;
 
-  // Replace or verify the region.
-  //
-  // You must use the same region in your REST API call as you used to obtain your subscription keys.
-  // For example, if you obtained your subscription keys from the westus region, replace
-  // "westcentralus" in the URI below with "westus".
-  //
-  // NOTE: Free trial subscription keys are generated in the westcentralus region, so if you are using
-  // a free trial subscription key, you should not need to change this region.
-  private static final String uriBase = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect";
+  /**
+   * Replace or verify the region.
+   *
+   * You must use the same region in your REST API call as you used to obtain your subscription
+   * keys. For example, if you obtained your subscription keys from the westus region, replace
+   * "westcentralus" in the URI below with "westus".
+   *
+   * Example : "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect"
+   * NOTE: Free trial subscription keys are generated in the westcentralus region, so if you are using a free trial
+   * subscription key, you should not need to change this region.
+   **/
+  private static final String uriBase = APIKeys.REGION;
 
+  //Spotify client ID.
+  private static final String clientId = APIKeys.CLIENT_ID;
 
-  private static Map<Moods, Double> emotions = new HashMap<Moods, Double>();
+  //Spotify client secret id.
+  private static final String clientSecret = APIKeys.SECRET;
+
+  private static Map<Moods, Double> emotions = new HashMap<>();
 
   private static List<String> songs = new ArrayList<>();
+
 
   private static List<Moods> getMood() {
     Double max = 0.0;
     List<Moods> list = new ArrayList<>();
 
-    for(Moods key: emotions.keySet()) {
-      if(emotions.get(key) >= 0.9) {
+    for (Moods key : emotions.keySet()) {
+      if (emotions.get(key) >= 0.9) {
         list.add(key);
-      } else if(emotions.get(key) > 0.1){
+      } else if (emotions.get(key) > 0.1) {
         list.add(key);
       }
 
-      if(list.size() == 2){
+      if (list.size() == 2) {
         return list;
       }
     }
 
-    if(list.isEmpty()) {
+    if (list.isEmpty()) {
       for (Double value : emotions.values()) {
         if (value > max) {
           max = value;
@@ -103,26 +120,32 @@ public class Tracker {
     return list;
   }
 
-  private static final String clientId = "dc666fe2d7c54d038e6d8bb4c4095704";
-
-  private static final String clientSecret = "100b28712cba4d699fc4ff543039d259";
-
-  private static void takePicture() throws IOException{
+  /**
+   * Takes a picture using the computer's webcam and stores it locally as filename "test3.png"
+   */
+  private static void takePicture() {
     Webcam webcam = Webcam.getDefault();
     Dimension[] d = webcam.getDevice().getResolutions();
-    webcam.setViewSize(new Dimension(d[d.length-1].width, d[d.length-1].height));
+    webcam.setViewSize(new Dimension(d[d.length - 1].width, d[d.length - 1].height));
     webcam.open();
     BufferedImage image = webcam.getImage();
-    ImageIO.write(image, "PNG", new File("test3.png"));
+    try {
+      ImageIO.write(image, "PNG", new File("test3.png"));
+    } catch (IOException e) {
+      System.out.println("Could not take the image.");
+    }
     webcam.close();
   }
 
-  public static void main(String[] args) throws Throwable {
-
+  /**
+   * Analyzes the picture, extracting the emotions and connects to Spotify, returning a string
+   * containing the playlist data.
+   *
+   * @return String containing the playlist and the songs to be played.
+   */
+  private static String useApi() {
     HttpClient httpclient = new DefaultHttpClient();
-
-    takePicture();
-
+    StringBuilder sb = new StringBuilder();
 
     try {
       URIBuilder builder = new URIBuilder(uriBase);
@@ -142,10 +165,9 @@ public class Tracker {
       request.setHeader("Content-Type", "application/octet-stream");
       request.setHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
 
-
       // Request body.
       //StringEntity reqEntity = new StringEntity(
-        //  "{\"url\":\"https://upload.wikimedia.org/wikipedia/commons/c/c3/RH_Louise_Lillian_Gish.jpg\"}");
+      //  "{\"url\":\"https://upload.wikimedia.org/wikipedia/commons/c/c3/RH_Louise_Lillian_Gish.jpg\"}");
       File file = new File("test3.png");
 
       FileEntity reqEntity = new FileEntity(file, ContentType.APPLICATION_OCTET_STREAM);
@@ -170,19 +192,19 @@ public class Tracker {
             String rawNum = split2[i + 1];
             if (split2[i].equals("contempt")) {
               key = Moods.CONTEMPT;
-            } else if(split2[i].equals("surprise")){
+            } else if (split2[i].equals("surprise")) {
               key = Moods.SURPRISE;
-            }else if(split2[i].equals("happiness")){
+            } else if (split2[i].equals("happiness")) {
               key = Moods.HAPPINESS;
-            }else if(split2[i].equals("neutral")){
+            } else if (split2[i].equals("neutral")) {
               key = Moods.NEUTRAL;
-            }else if(split2[i].equals("sadness")){
+            } else if (split2[i].equals("sadness")) {
               key = Moods.SADNESS;
-            }else if(split2[i].equals("disgust")){
+            } else if (split2[i].equals("disgust")) {
               key = Moods.DISGUST;
-            }else if(split2[i].equals("anger")){
+            } else if (split2[i].equals("anger")) {
               key = Moods.ANGER;
-            }else {
+            } else {
               key = Moods.FEAR;
             }
 
@@ -230,7 +252,7 @@ public class Tracker {
 
           List<Moods> emotions = Tracker.getMood();
 
-          for(int i = 0; i < emotions.size(); i++) {
+          for (int i = 0; i < emotions.size(); i++) {
             switch (emotions.get(i).toString().toLowerCase()) {
               case "anger":
                 albumMood = "spotify:user:spotify:playlist:5s7Sp5OZsw981I2OkQmyrz";
@@ -277,16 +299,23 @@ public class Tracker {
             try {
               final Playlist playlist = request2.get();
 
-              System.out.println("Retrieved playlist " + playlist.getName());
-              System.out.println(playlist.getDescription());
-              System.out.println("It contains " + playlist.getTracks().getTotal() + " tracks");
+              sb.append("Retrieved playlist: ");
+              sb.append(playlist.getName());
+              sb.append(System.getProperty("line.separator"));
 
-              if(emotions.size() == 2){
-                for(int j = 0; j < 3 - i; j++) {
+              sb.append(playlist.getDescription());
+              sb.append("\n");
+
+              String numberTracks = "It contains " + playlist.getTracks().getTotal() + " tracks";
+              sb.append(numberTracks);
+              sb.append(System.getProperty("line.separator"));
+
+              if (emotions.size() == 2) {
+                for (int j = 0; j < 3 - i; j++) {
                   songs.add(playlist.getTracks().getItems().get(j).getTrack().getName());
                 }
               } else {
-                for(int j = 0; j < 5; j ++) {
+                for (int j = 0; j < 5; j++) {
                   songs.add(playlist.getTracks().getItems().get(j).getTrack().getName());
                 }
               }
@@ -296,9 +325,12 @@ public class Tracker {
             }
           }
 
-          System.out.println("Some recommended songs are: ");
-          for(String song: songs) {
-            System.out.println(song);
+          sb.append("Some recommended songs are: ");
+          sb.append(System.getProperty("line.separator"));
+
+          for (String song : songs) {
+            sb.append(song);
+            sb.append(System.getProperty("line.separator"));
           }
 
         } else if (jsonString.charAt(0) == '{') {
@@ -311,6 +343,13 @@ public class Tracker {
       // Display error message.
       System.out.println(e.getMessage());
     }
+
+    return sb.toString();
+  }
+
+  public String run() {
+    takePicture();
+    return useApi();
   }
 
 }
